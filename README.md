@@ -96,6 +96,22 @@ query in `SKILL.md` step 3, save as `payload.json`, and run the picker in a loop
   pool (~50KB) and randomises client-side. Don't try to move the shuffle into SQL.
 - `query_data_sources` is rate-limited on the current Notion plan. Two queries
   per day is well inside it, but don't add a polling loop.
+- **The candidate pool is capped at 100 rows.** SQL mode returns at most 100 and
+  offers no cursor; `query_database_view` paginates but can't take a custom
+  `WHERE`. So on a ~300-quote corpus the step-3 query always comes back
+  `has_more: true`. The `ORDER BY COALESCE("Times Used", 0) ASC` on that query is
+  what keeps this harmless: the picker only deals from the lowest-`Times Used`
+  tier, so sorting puts exactly those rows inside the window and the truncation
+  only sheds rows that were never eligible. Mechanism 2 above still holds — the
+  corpus is traversed in full before anything repeats. What is lost is breadth of
+  the daily draw: the shuffle covers a 100-row slice of the tier rather than the
+  whole tier, so a quote's position in the queue is somewhat arbitrary. Its
+  frequency is not affected. Don't remove that `ORDER BY`.
+- The title of a daily entry is a **date mention**
+  (`<mention-date start="YYYY-MM-DD"/>`), matching what the manual "new entry"
+  button writes — not the literal string `@August 3, 2026`, which renders almost
+  identically but is inert text. Real mentions read back as `null` over SQL,
+  which is why the step-2 lookup matches on `Dato` instead of the title.
 - Attribution: quotes whose wording or origin is contested are labelled
   `(attributed)` in the `Author` field, and `Source` is left blank where a
   specific citation could not be given confidently. Treat blank `Source` as
