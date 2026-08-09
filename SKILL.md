@@ -37,7 +37,22 @@ If a page exists, use it. If not, create one with `notion-create-pages`:
 - `template_id`: `2f3856f366e080e9ac62eedefcb6c5b7` (do **not** also pass `content` — the template supplies it)
 - `icon`: `♟️`
 - properties:
-  - `"Test"`: the title, formatted exactly like the existing entries — `@August 3, 2026` (an `@`, then full month name, day without leading zero, year)
+  - `"Test"`: a **date mention**, not a text string — `<mention-date start="TODAY"/>`.
+    This is what the "new entry" button produces, and Notion renders it as the calendar
+    chip `@August 3, 2026`. Writing the literal string `@August 3, 2026` looks nearly
+    identical in the UI but is inert text — it does not resolve, sort, or link like a
+    date. Sanity check: a real mention reads back as `null` over SQL, a text string
+    reads back as itself.
+
+    Known limitation: the mention's *display format* (full date vs. relative) cannot
+    be set from here. Notion-flavored Markdown accepts only `start`, `end`,
+    `startTime`, `endTime` and `timeZone` on `<mention-date>`; a `format`,
+    `date-format` or `relative` attribute is silently discarded on write and never
+    appears on read. So a mention created by this routine takes the workspace
+    default, which renders as `@Today` on the day itself and as the full date
+    afterwards. Forcing "full date" permanently requires clicking the chip in the
+    Notion UI and turning off "Relative" — there is no API path. Do not claim to
+    have set it.
   - `"date:Dato:start"`: `TODAY`
   - `"date:Dato:is_datetime"`: `0`
 
@@ -67,7 +82,27 @@ SELECT url, "Quote" AS quote, "Author" AS author, "Source" AS source,
 FROM "collection://397b4c07-2387-43cf-91f2-30d4a66d42c9"
 WHERE "date:Last Used:start" IS NULL
    OR julianday('TODAY') - julianday("date:Last Used:start") > 120
+ORDER BY COALESCE("Times Used", 0) ASC
+LIMIT 100
 ```
+
+The `ORDER BY` is load-bearing, not cosmetic. `query_data_sources` returns at
+most 100 rows in SQL mode and gives no cursor to page past them, so on a corpus
+of ~300 the pool is always truncated. This is expected, not an error — and note
+that the explicit `LIMIT 100` makes the response report `has_more: false`, so
+that flag is not a truncation signal here. Sorting by `Times Used` ascending
+guarantees the truncation
+throws away rows the picker could never have chosen anyway: it only ever deals
+from the lowest-`Times Used` tier, so those rows must be the ones inside the
+window. Without the sort, the cut is arbitrary and can discard the entire
+eligible tier. Traversal still holds — each pick lifts one row out of the tier,
+letting a row from position 101 slide in — so every quote gets its turn before
+anything repeats.
+
+One knock-on: the picker derives its default cooldown from the number of
+candidates it was handed, so it sits at the 90-day floor instead of widening
+with the corpus. That is inert here — the SQL above already excludes anything
+used within 120 days, which is the stricter of the two.
 
 Both queries count against a monthly `query_data_sources` quota. Run each of
 them exactly once. If either returns a usage-limit error, stop and report it —
@@ -123,16 +158,18 @@ The template leaves an empty callout in the `daily quote` section:
 ```
 
 Use `notion-update-page` with `command: update_content` to replace the empty
-`“”` with the quote. Format:
+`“”` with the quote. The quote itself is **bold**, including its curly quotation
+marks; the attribution that follows is not. Format:
 
 ```
-“<quote>” — <Author>
+**“<quote>”** — <Author>
 ```
 
-If the quote has a `Source`, append it in italics on the same line:
+If the quote has a `Source`, append it in italics on the same line, outside the
+bold:
 
 ```
-“<quote>” — <Author>, *<Source>*
+**“<quote>”** — <Author>, *<Source>*
 ```
 
 If the search-and-replace fails because the placeholder is missing or already
