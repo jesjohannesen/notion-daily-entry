@@ -123,16 +123,17 @@ The template leaves an empty callout in the `daily quote` section:
 ```
 
 Use `notion-update-page` with `command: update_content` to replace the empty
-`“”` with the quote. Format:
+`“”` with the quote. The quote itself is bold — including the quotation marks —
+and the attribution is not. Format:
 
 ```
-“<quote>” — <Author>
+**“<quote>”** — <Author>
 ```
 
 If the quote has a `Source`, append it in italics on the same line:
 
 ```
-“<quote>” — <Author>, *<Source>*
+**“<quote>”** — <Author>, *<Source>*
 ```
 
 If the search-and-replace fails because the placeholder is missing or already
