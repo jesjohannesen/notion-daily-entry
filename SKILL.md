@@ -54,7 +54,8 @@ If a page exists, use it. If not, create one with `notion-create-pages`:
     Notion UI and turning off "Relative" — there is no API path. Do not claim to
     have set it.
   - `"date:Dato:start"`: `TODAY`
-  - `"date:Dato:is_datetime"`: `0`
+  - `"date:Dato:is_datetime"`: `0` — a JSON **number**, not the string `"0"`.
+    Notion rejects the string with a 400 (`must be 0 or 1; wrote 0 instead of "0"`).
 
 Leave the habit checkboxes alone — Jesper ticks those himself.
 
@@ -142,7 +143,7 @@ Update the chosen quote's page (`pick.url`) with `notion-update-page`,
 `command: update_properties`:
 
 - `"date:Last Used:start"`: `TODAY`
-- `"date:Last Used:is_datetime"`: `0`
+- `"date:Last Used:is_datetime"`: `0` (a JSON number, as above)
 - `"Times Used"`: `pick.times_used + 1`
 
 This is what makes tomorrow's run avoid today's quote. Do not skip it.
