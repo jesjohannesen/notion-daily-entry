@@ -53,6 +53,13 @@ If a page exists, use it. If not, create one with `notion-create-pages`:
     afterwards. Forcing "full date" permanently requires clicking the chip in the
     Notion UI and turning off "Relative" — there is no API path. Do not claim to
     have set it.
+
+    Tested and ruled out: omitting `"Test"` entirely and letting the template's own
+    `@Today` token resolve at creation. It does produce a real mention
+    (`<mention-date start="TODAY"/>`), but with the *same* relative display — so the
+    button-created entries render `@Today` on their own day too, exactly like this
+    routine's. It also inherits the template title's trailing space. Passing the
+    mention explicitly is strictly better; don't re-test this.
   - `"date:Dato:start"`: `TODAY`
   - `"date:Dato:is_datetime"`: `0` — a JSON **number**, not the string `"0"`.
     Notion rejects the string with a 400 (`must be 0 or 1; wrote 0 instead of "0"`).
