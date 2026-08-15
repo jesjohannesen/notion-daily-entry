@@ -107,11 +107,16 @@ query in `SKILL.md` step 3, save as `payload.json`, and run the picker in a loop
   the daily draw: the shuffle covers a 100-row slice of the tier rather than the
   whole tier, so a quote's position in the queue is somewhat arbitrary. Its
   frequency is not affected. Don't remove that `ORDER BY`.
-- The title of a daily entry is a **date mention**
-  (`<mention-date start="YYYY-MM-DD"/>`), matching what the manual "new entry"
-  button writes — not the literal string `@August 3, 2026`, which renders almost
-  identically but is inert text. Real mentions read back as `null` over SQL,
-  which is why the step-2 lookup matches on `Dato` instead of the title.
+- The title of a daily entry is **static text** in the form `@August 3, 2026` —
+  not a `<mention-date>`. A real mention obeys the workspace's relative display
+  setting, so the title reads `@Today`, then `@Yesterday`, and only settles into
+  the full date days later. That setting can't be changed over the API (the
+  `format` / `relative` attributes are discarded on write); it takes a click per
+  chip in the UI. Static text renders the same every day. The authoritative date
+  is `Dato`, which is what the step-2 lookup and any sorting use, so the title
+  being inert costs nothing. Mentions read back as `null` over SQL and static
+  text reads back as itself — that's the way to spot stragglers:
+  `SELECT "date:Dato:start", "Test" FROM "collection://a5979e60-916d-4018-a1ab-bcfb7245c177"`.
 - Attribution: quotes whose wording or origin is contested are labelled
   `(attributed)` in the `Author` field, and `Source` is left blank where a
   specific citation could not be given confidently. Treat blank `Source` as
