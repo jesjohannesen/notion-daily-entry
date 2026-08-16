@@ -68,6 +68,22 @@ Constraints are applied as a ladder and relaxed from the bottom up if the pool
 empties, so the routine degrades gracefully instead of failing. Whatever it
 relaxed is reported in the daily summary.
 
+## The page icon
+
+The entry used to open with a fixed ♟️ every day. The icon is now drawn per day
+from a pool of 30 in `pick_quote.py`, using the same `secrets.SystemRandom` as
+the quote, and returned alongside it as `icon`. The routine applies it in the
+step 6 update, so the quote and the icon land in one call.
+
+The draw is independent of the quote and of yesterday's icon, so the same one
+turns up twice running roughly once a month. Fixing that would mean reading
+yesterday's icon, which is not exposed as a SQL column on `kalender` and would
+cost a page fetch every morning, which is a poor trade for a 1-in-30 annoyance.
+Widening `ICONS` is the cheaper lever.
+
+The routine leaves an icon alone if it is neither one it just created nor the
+template default, on the assumption that anything else was chosen by hand.
+
 ## The context note
 
 Under the quote, in the same callout, the routine writes one or two gray
@@ -96,6 +112,7 @@ Constants live at the top of `pick_quote.py`:
 AUTHOR_COOLDOWN = 30
 CATEGORY_COOLDOWN = 3
 REGISTER_RUN = 2
+ICONS = [...]  # 30 page icons, drawn one per day
 ```
 
 The quote cooldown is computed from corpus size; override with

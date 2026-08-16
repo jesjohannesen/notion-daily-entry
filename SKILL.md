@@ -36,7 +36,8 @@ If a page exists, use it. If not, create one with `notion-create-pages`:
 
 - parent: `{"type": "data_source_id", "data_source_id": "a5979e60-916d-4018-a1ab-bcfb7245c177"}`
 - `template_id`: `2f3856f366e080e9ac62eedefcb6c5b7` (do **not** also pass `content` — the template supplies it)
-- `icon`: `♟️`
+- `icon`: leave it off here. The picker draws the day's icon at step 4, and step 6
+  applies it in the same call that writes the quote.
 - properties:
   - `"Test"`: **static text**, formatted exactly like the existing entries —
     `@August 3, 2026` (an `@`, then full month name, day without leading zero,
@@ -136,6 +137,16 @@ then run:
 python3 /tmp/pick_quote.py --today TODAY --payload /tmp/payload.json
 ```
 
+The script returns three things. `pick` is the chosen quote row, `icon` is the
+day's page icon, and `diagnostics` covers the pool sizes and anything relaxed.
+
+`icon` is drawn from a 30-emoji pool inside the script, using the same OS
+randomness as the quote and independent of it. Do not substitute an icon of your
+own, for the same reason you do not choose the quote. The draw does not look at
+yesterday, since the icon is not readable over SQL and a page fetch every morning
+is not worth spending to dodge a 1-in-30 repeat, so the same icon twice running
+is expected occasionally rather than a bug.
+
 Use whatever the script returns. If it reports relaxed constraints, that is
 fine — just mention it in the summary.
 
@@ -217,6 +228,11 @@ is genuinely unverified (see the README note on attribution), so either say the
 attribution is disputed or write about the idea rather than the anecdote. A
 plain, slightly dry note is fine. A confidently wrong one is not.
 
+Pass `icon: pick.icon` on this same `update_page` call, so the quote and the
+day's icon land together. Apply it if you created the page this run, or if an
+existing page still carries the template's default ♟️. Anything else means
+Jesper picked the icon by hand, so leave it alone.
+
 If the search-and-replace fails because the placeholder is missing or already
 filled, fetch the page, find the 💭 callout under `daily quote`, and replace its
 text content instead. Never append a second callout, and never overwrite a
@@ -228,7 +244,7 @@ non-empty quote, leave it and say so in the summary.
 Report back briefly:
 
 - the daily entry page URL (and whether you created it or it already existed)
-- the quote, author and source
+- the quote, author and source, plus the icon that was drawn
 - one line of picker diagnostics: pool size, tier size, and any relaxed constraints
 
 Keep it short. No preamble.

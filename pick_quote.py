@@ -16,7 +16,8 @@ Reads a JSON payload on stdin:
     }
 
 `recent` is the log of what was already featured, newest first or in any order —
-it is sorted here. Writes the chosen row plus diagnostics as JSON to stdout.
+it is sorted here. Writes the chosen row, the day's page icon, and diagnostics
+as JSON to stdout.
 
 Randomness is drawn from secrets.SystemRandom (the OS CSPRNG), never seeded
 from the date, so consecutive days are statistically independent.
@@ -37,6 +38,16 @@ RNG = secrets.SystemRandom()
 AUTHOR_COOLDOWN = 30
 CATEGORY_COOLDOWN = 3
 REGISTER_RUN = 2  # force a switch after this many identical registers in a row
+
+# Page icons for the daily entry, drawn per day. Kept in the same muted register
+# as the original chess pawn, small objects rather than loud symbols. The draw is
+# independent of the quote and of the previous day, so consecutive repeats happen
+# about once every len(ICONS) days; widen the pool if that grates.
+ICONS = [
+    "♟️", "🕯️", "🧭", "🗝️", "🪶", "🫖", "🕰️", "🪴", "🐚", "🧶",
+    "🌾", "🍂", "🪵", "🧊", "🪞", "🌙", "⛰️", "🗺️", "☕", "🥾",
+    "🎐", "🪟", "🧱", "🍃", "🌗", "🪺", "🧺", "🪔", "📎", "🔭",
+]
 
 
 def parse_date(value):
@@ -111,6 +122,11 @@ def build_constraints(recent, today, cooldown_days):
     ]
 
 
+def pick_icon():
+    """The day's page icon, drawn from ICONS with the same OS randomness."""
+    return RNG.choice(ICONS)
+
+
 def select(candidates, recent, today, cooldown_days):
     constraints = build_constraints(recent, today, cooldown_days)
     relaxed = []
@@ -162,7 +178,13 @@ def main():
         cooldown = max(90, int(len(candidates) * 0.6))
 
     pick, diagnostics = select(candidates, recent, today, cooldown)
-    json.dump({"pick": pick, "diagnostics": diagnostics}, sys.stdout, ensure_ascii=False, indent=2)
+    diagnostics["icon_pool"] = len(ICONS)
+    json.dump(
+        {"pick": pick, "icon": pick_icon(), "diagnostics": diagnostics},
+        sys.stdout,
+        ensure_ascii=False,
+        indent=2,
+    )
     print()
 
 
