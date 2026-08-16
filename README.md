@@ -68,6 +68,26 @@ Constraints are applied as a ladder and relaxed from the bottom up if the pool
 empties, so the routine degrades gracefully instead of failing. Whatever it
 relaxed is reported in the daily summary.
 
+## The context note
+
+Under the quote, in the same callout, the routine writes one or two gray
+sentences on where the line came from and what it is claiming. For Braudel's
+"Events are dust" that means the POW camp he drafted the book in, not a
+restatement of the line.
+
+There is no database field for this, and the picker has nothing to do with it.
+The model writes it at step 6 from what it knows about the author and the
+source, which makes it the one part of the daily entry that isn't mechanically
+derived. So the guardrails in `SKILL.md` carry the weight. Keep it shorter than
+the quote, never paraphrase the line back, and never invent an origin for a
+quote whose provenance is flagged as shaky (`(attributed)` in `Author`, or a
+blank `Source`). If nothing solid is known, the note should say so or stick to
+the idea.
+
+`SKILL.md` also carries two standing style rules for the note, no em-dash
+constructions and no colon constructs. They apply to anything the routine
+writes, not just this line.
+
 ## Tuning
 
 Constants live at the top of `pick_quote.py`:

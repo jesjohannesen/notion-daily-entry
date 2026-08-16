@@ -175,6 +175,48 @@ bold:
 **“<quote>”** — <Author>, *<Source>*
 ```
 
+Then, on the next line **inside the same callout**, add a short context note in
+gray. The finished cell looks like this:
+
+```
+<callout icon="💭" color="brown_bg">
+	**“<quote>”** — <Author>, *<Source>*
+	<span color="gray"><context></span>
+</callout>
+```
+
+The context is one or two sentences, 40 words at the outside, so that it stays
+smaller than the quote it sits under. Write it yourself, as there is no database
+field for it. Aim it at *why the line means what it means*, so who the author
+was, what situation or argument produced the line, what the phrase is actually
+claiming. For Braudel's "Events are dust":
+
+```
+Braudel drafted the book from memory in a German POW camp. He argued that
+history runs at three speeds, and that the fastest of them, the daily churn of
+events, is mere foam over the slow tides that actually move the world.
+```
+
+### Language
+
+Jesper's preferences. They matter most for the context note, but apply to
+anything this routine writes.
+
+- **No em-dash constructions.** Where a dash wants to go, use a comma, a full
+  stop, or brackets. Two short sentences beat one sentence hinged on a dash.
+- **No colon constructs.** Do not set up a phrase and then deliver the payoff
+  after a colon. Say the thing in a sentence.
+
+The dash in the attribution line stays, since that is a citation separator and
+not prose.
+
+Two failure modes to avoid. Do not restate the quote in flatter words, and if a
+note would only paraphrase, give the origin instead. Do not invent provenance
+either. Where `Author` carries `(attributed)` or `Source` is blank, the origin
+is genuinely unverified (see the README note on attribution), so either say the
+attribution is disputed or write about the idea rather than the anecdote. A
+plain, slightly dry note is fine. A confidently wrong one is not.
+
 If the search-and-replace fails because the placeholder is missing or already
 filled, fetch the page, find the 💭 callout under `daily quote`, and replace its
 text content instead. Never append a second callout, and never overwrite a
