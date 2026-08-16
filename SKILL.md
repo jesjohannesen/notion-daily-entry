@@ -28,8 +28,9 @@ SELECT url FROM "collection://a5979e60-916d-4018-a1ab-bcfb7245c177"
 WHERE "date:Dato:start" = 'TODAY'
 ```
 
-(The title property is called `Test` in this database — a leftover name. It
-reads back as `null` over SQL, so match on `Dato` only, never on the title.)
+(The title property is called `Test` in this database — a leftover name. Match
+on `Dato`, never on the title: `Dato` is the authoritative date field, and the
+title is display text that can be edited by hand without breaking anything.)
 
 If a page exists, use it. If not, create one with `notion-create-pages`:
 
@@ -37,24 +38,26 @@ If a page exists, use it. If not, create one with `notion-create-pages`:
 - `template_id`: `2f3856f366e080e9ac62eedefcb6c5b7` (do **not** also pass `content` — the template supplies it)
 - `icon`: `♟️`
 - properties:
-  - `"Test"`: a **date mention**, not a text string — `<mention-date start="TODAY"/>`.
-    This is what the "new entry" button produces, and Notion renders it as the calendar
-    chip `@August 3, 2026`. Writing the literal string `@August 3, 2026` looks nearly
-    identical in the UI but is inert text — it does not resolve, sort, or link like a
-    date. Sanity check: a real mention reads back as `null` over SQL, a text string
-    reads back as itself.
+  - `"Test"`: **static text**, formatted exactly like the existing entries —
+    `@August 3, 2026` (an `@`, then full month name, day without leading zero,
+    year). Do **not** write a `<mention-date>` here.
 
-    Known limitation: the mention's *display format* (full date vs. relative) cannot
-    be set from here. Notion-flavored Markdown accepts only `start`, `end`,
-    `startTime`, `endTime` and `timeZone` on `<mention-date>`; a `format`,
-    `date-format` or `relative` attribute is silently discarded on write and never
-    appears on read. So a mention created by this routine takes the workspace
-    default, which renders as `@Today` on the day itself and as the full date
-    afterwards. Forcing "full date" permanently requires clicking the chip in the
-    Notion UI and turning off "Relative" — there is no API path. Do not claim to
-    have set it.
+    Why not a mention: a real date mention renders under the workspace's display
+    setting, which is relative — the title shows `@Today`, then `@Yesterday`, and
+    only later settles into the full date. The chip's display format cannot be set
+    over the API (Notion-flavored Markdown accepts only `start`, `end`, `startTime`,
+    `endTime` and `timeZone` on `<mention-date>`; `format` / `date-format` /
+    `relative` are silently discarded on write), and turning off "Relative" requires
+    clicking each chip in the UI. Static text is stable and reads the same on every
+    day. The real date lives in `Dato`, which is what sorting and the step-2 lookup
+    use, so nothing is lost by the title being plain text.
+
+    Sanity check: static text reads back as itself over SQL; a date mention reads
+    back as `null`. If a `SELECT "Test"` comes back `null`, that entry has a mention
+    and needs converting.
   - `"date:Dato:start"`: `TODAY`
-  - `"date:Dato:is_datetime"`: `0`
+  - `"date:Dato:is_datetime"`: `0` — pass it as the JSON number `0`, not the string
+    `"0"`. Quoted, `notion-create-pages` rejects the whole call with a 400.
 
 Leave the habit checkboxes alone — Jesper ticks those himself.
 
