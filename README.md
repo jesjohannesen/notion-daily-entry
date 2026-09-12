@@ -104,6 +104,31 @@ the idea.
 constructions and no colon constructs. They apply to anything the routine
 writes, not just this line.
 
+## Carrying over unfinished to-dos
+
+Jesper writes the day's to-dos as a checkbox list under `## notes/ideas`, under a
+lead-in line of his own (`To-dos:`, `Få gjort i dag:`). At step 7 the routine
+reads the previous entry, takes every `- [ ]` line that is still unticked, and
+copies it into the new entry under a gray `fra i går:` label so leftovers are
+distinguishable from what he adds himself. Ticked items are left behind.
+
+Two things keep this from misbehaving:
+
+- **The previous entry is whatever came last, not yesterday.** Step 2 gets it
+  with `WHERE "date:Dato:start" <= TODAY ORDER BY ... DESC LIMIT 3`, which
+  returns today's page and the one before it in a single query, with a row spare
+  so a duplicate entry for today can't hide the previous one. Over a gap the
+  label carries the actual date instead of claiming `i går`.
+- **The old entry is never touched.** Items are copied, not moved, so nothing is
+  ticked or deleted on a page Jesper has already closed out. An item he never
+  ticks keeps travelling forward one day at a time, which is the intent.
+
+Re-running on the same day is a no-op: the step skips any item whose text is
+already on today's page, ticked or not.
+
+The habit checkboxes are database properties rather than page content, so they
+never look like to-dos to this step.
+
 ## Tuning
 
 Constants live at the top of `pick_quote.py`:
