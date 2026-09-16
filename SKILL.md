@@ -21,12 +21,24 @@ it consistently everywhere below.
 
 ## 2. Find or create today's entry page
 
-Query the `kalender` data source for a page whose `Dato` is `TODAY`:
+One query gets both today's entry and the one before it, which step 7 needs:
 
 ```sql
-SELECT url FROM "collection://a5979e60-916d-4018-a1ab-bcfb7245c177"
-WHERE "date:Dato:start" = 'TODAY'
+SELECT url, "date:Dato:start" AS dato
+FROM "collection://a5979e60-916d-4018-a1ab-bcfb7245c177"
+WHERE "date:Dato:start" <= 'TODAY'
+ORDER BY "date:Dato:start" DESC
+LIMIT 3
 ```
+
+Read the rows by their `dato`, not by their position. A row whose `dato` is
+`TODAY` is today's entry, and the first row whose `dato` is earlier than `TODAY`
+is the previous entry; call it `PREV`. Either may be absent. Three rows rather
+than two so that a duplicate entry for today cannot push `PREV` out of the
+window.
+
+`PREV` is whatever entry came last, not necessarily yesterday. Jesper skips
+days. Use the date the query returned rather than assuming `TODAY` minus one.
 
 (The title property is called `Test` in this database — a leftover name. Match
 on `Dato`, never on the title: `Dato` is the authoritative date field, and the
@@ -239,12 +251,79 @@ text content instead. Never append a second callout, and never overwrite a
 quote Jesper has already written there by hand — if the callout already holds a
 non-empty quote, leave it and say so in the summary.
 
-## 7. Summary
+## 7. Carry over unfinished to-dos from `PREV`
+
+Jesper keeps the day's to-dos as a checkbox list under `## notes/ideas`, under a
+lead-in line he writes himself (`To-dos:`, `Få gjort i dag:`, whatever he felt
+like that morning). Anything still unticked at the end of the day should follow
+him into the new entry rather than being stranded on a page he will not open
+again.
+
+Skip this step if step 2 found no `PREV`.
+
+### What to take
+
+Fetch `PREV.url` and collect its unchecked to-dos, meaning the `- [ ]` lines.
+Leave `- [x]` alone, those are done. Take them from wherever they sit rather
+than only from under `notes/ideas`. That section is where they live today, but
+that is Jesper's habit and not a rule. Keep any sub-items with their parent and
+keep the indentation.
+
+The habit checkboxes are database properties, not page content, so they never
+appear as `- [ ]` lines. They read as `__YES__` / `__NO__` in the properties
+block. Leave them alone here too; step 2 already says Jesper ticks those.
+
+Copy the wording verbatim. Do not tidy it, translate it, split or merge items,
+or add any of your own. Date mentions and links inside an item come across as
+they are.
+
+### Where to put it
+
+Fetch today's entry, then write the items in under its `## notes/ideas` heading,
+each still unchecked, under a gray line naming where they came from:
+
+```
+<span color="gray">fra i går:</span>
+- [ ] Finne kunde + tema PAE
+- [ ] Lage Anki flashcards og gjennomgå ukens pensum
+```
+
+Say `fra i går:` only when `PREV` really is the day before `TODAY`. Otherwise
+use its date, as `fra 2026-09-09:`. Do not write `i går` over a three-day gap.
+
+A fresh entry's `notes/ideas` is empty, which `fetch` shows either as
+`<empty-block/>` or elides as `…` when the response is truncated. Both mean
+empty. Never treat an elided section as content and never put `…` in an
+`old_str`.
+
+On an empty section, anchor the edit on the heading itself with
+`command: update_content`:
+
+- `old_str`: `## <span underline="true">notes/ideas</span>`
+- `new_str`: that same heading, then the gray line and the items
+
+If Jesper has already written in the section, which happens when the routine
+runs twice in a day, append the block after what is there instead of pushing in
+above it. Skip any item whose text is already on today's page, ticked or not, so
+a second run changes nothing.
+
+Never edit `PREV`. Do not tick its items, do not delete them, do not leave a
+note on it. An item Jesper never ticks travels forward a day at a time until he
+ticks it or deletes it, which is the point of the step and not a runaway.
+
+If the `notes/ideas` heading is missing altogether, the template content has not
+landed yet. It arrives asynchronously and can be absent for a few minutes after
+`notion-create-pages` returns, which is the same reason step 6 can fail to find
+its callout. Fetch the page again, and report it rather than guessing at a
+placement if it is still missing.
+
+## 8. Summary
 
 Report back briefly:
 
 - the daily entry page URL (and whether you created it or it already existed)
 - the quote, author and source, plus the icon that was drawn
 - one line of picker diagnostics: pool size, tier size, and any relaxed constraints
+- how many to-dos carried over and from which date, or that there were none
 
 Keep it short. No preamble.
